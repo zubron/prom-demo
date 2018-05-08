@@ -16,3 +16,33 @@ serverFiles:
       ## How frequently to evaluate rules
       ##
       evaluation_interval: 15s
+  alerts:
+    groups:
+      - name: APIAlerts
+        rules:
+          - alert: ErrorRate
+            expr: sum(rate(http_request_duration_ms_count{code="500"}[5m])) / sum(rate(http_request_duration_ms_count[5m])) > 0.1
+            for: 1m
+            labels:
+              severity: alert
+            annotations:
+              description: 'Percentage of 500 responses from API is over 10%: {{ $value }}'
+              summary: 'High percentage of 500 responses'
+
+alertmanagerFiles:
+  alertmanager.yml:
+    global:
+      # Add Slack API URL here or set with --values
+      slack_api_url: ''
+
+    receivers:
+      - name: default-receiver
+        slack_configs:
+          - send_resolved: true
+            text: "Summary: {{ .CommonAnnotations.summary }}\nDescription: {{ .CommonAnnotations.description }}"
+
+    route:
+      group_wait: 10s
+      group_interval: 5m
+      receiver: default-receiver
+      repeat_interval: 3h
