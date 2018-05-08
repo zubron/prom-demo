@@ -4,10 +4,40 @@ const Prometheus = require('prom-client');
 
 Prometheus.collectDefaultMetrics();
 
+const total_errors = new Prometheus.Counter({
+    name: 'todo_request_error_total',
+    help: 'Number of errors encountered when requesting Todo items'
+});
+
+const total_todos = new Prometheus.Counter({
+    name: 'todo_items_created',
+    help: 'Number of todo items that were created in total'
+});
+
+const current_todos = new Prometheus.Gauge({
+    name: 'todo_items_current',
+    help: 'Number of todo items currently available'
+});
+
+const httpRequestDurationHistogram = new Prometheus.Histogram({
+    name: 'http_request_duration_ms',
+    help: 'Duration of HTTP requests in ms',
+    labelNames: ['method', 'route', 'code'],
+    buckets: [5, 10, 25, 50, 100, 250, 500, 1000]
+});
+
+const httpRequestDurationSummary = new Prometheus.Summary({
+    name: 'http_request_duration_ms_summary',
+    help: 'HTTP request duration quantiles',
+    labelNames: ['method', 'route', 'code'],
+    percentiles: [0.5, 0.75, 0.9, 0.99]
+});
+
 const getTodos = (res) => {
     Todo.find((err, todos) => {
         // if there is an error retrieving, send the error
         if (err) {
+            total_errors.inc();
             res.send(err);
             return;
         }
@@ -17,6 +47,26 @@ const getTodos = (res) => {
 };
 
 module.exports = (app) => {
+    app.use((req, res, next) => {
+        res.locals.startEpoch = Date.now();
+
+        res.on('finish', () => {
+            // other handlers have now run and response is done
+            const responseTimeInMs = Date.now() - res.locals.startEpoch;
+
+            const pathLabel = req.route ? req.route.path : req.url;
+            httpRequestDurationHistogram
+                .labels(req.method, pathLabel, res.statusCode)
+                .observe(responseTimeInMs);
+
+            httpRequestDurationSummary
+                .labels(req.method, pathLabel, res.statusCode)
+                .observe(responseTimeInMs);
+        });
+
+        next();
+    });
+
     // api ---------------------------------------------------------------------
     // get all todos
     app.get('/api/todos', (req, res) => {
@@ -29,6 +79,7 @@ module.exports = (app) => {
             _id: req.params.todo_id
         }, (err, todo) => {
             if (err) {
+                total_errors.inc();
                 res.send(err);
                 return;
             }
@@ -49,10 +100,13 @@ module.exports = (app) => {
             complete: false
         }, (err, todo) => {
             if (err) {
+                total_errors.inc();
                 res.send(err);
                 return;
             }
 
+            total_todos.inc();
+            current_todos.inc();
             // get and return all the todos after you create another
             getTodos(res);
         });
@@ -65,6 +119,7 @@ module.exports = (app) => {
             { complete: req.body.complete },
             (err) => {
                 if (err) {
+                    total_errors.inc();
                     res.send(err);
                     return;
                 }
@@ -80,10 +135,12 @@ module.exports = (app) => {
             _id: req.params.todo_id
         }, (err, todo) => {
             if (err) {
+                total_errors.inc();
                 res.send(err);
                 return;
             }
 
+            current_todos.dec();
             getTodos(res);
         });
     });
