@@ -1,0 +1,7 @@
+dependencies:
+  - name: mongodb
+    version: 2.0.4
+    repository: https://kubernetes-charts.storage.googleapis.com/
+  # - name: prometheus
+  #   version: 6.3.1
+  #   repository: https://kubernetes-charts.storage.googleapis.com/

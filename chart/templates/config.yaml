@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" .  }}-config
+data:
+  database_host: {{ .Release.Name  }}-mongodb
+  database_port: "27017"
+  database_user: {{.Values.mongodb.mongodbUsername | quote}}
+  database_name: {{.Values.mongodb.mongodbDatabase | quote}}
+  database_type: "mongodb"

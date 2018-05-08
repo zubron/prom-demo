@@ -1,3 +1,6 @@
+# Secret files
+.slack-secret
+
 # Logs
 logs
 *.log
