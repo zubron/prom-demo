@@ -1,5 +1,8 @@
 const paths = require('../config/paths');
 const Todo = require('./models/todo');
+const Prometheus = require('prom-client');
+
+Prometheus.collectDefaultMetrics();
 
 const getTodos = (res) => {
     Todo.find((err, todos) => {
@@ -83,6 +86,11 @@ module.exports = (app) => {
 
             getTodos(res);
         });
+    });
+
+    app.get('/metrics', (req, res) => {
+        res.set('Content-Type', Prometheus.register.contentType);
+        res.end(Prometheus.register.metrics());
     });
 
     app.get('/', (req, res) => {
