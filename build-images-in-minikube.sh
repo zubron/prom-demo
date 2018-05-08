@@ -2,4 +2,4 @@
 
 eval $(minikube docker-env)
 
-docker build -t todo-demo:s1 .
+docker build -t todo-demo:s2 .
