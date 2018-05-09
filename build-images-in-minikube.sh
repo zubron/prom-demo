@@ -2,4 +2,4 @@
 
 eval $(minikube docker-env)
 
-docker build -t todo-demo:s3 .
+docker build -t todo-demo:s4 .
