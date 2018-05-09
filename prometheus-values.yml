@@ -3,3 +3,16 @@ server:
     enabled: true
     hosts:
       - prometheus.demo.local
+
+serverFiles:
+  prometheus.yml:
+    global:
+      ## How frequently to scrape targets by default
+      ##
+      scrape_interval: 15s
+      ## How long until a scrape request times out
+      ##
+      scrape_timeout: 10s
+      ## How frequently to evaluate rules
+      ##
+      evaluation_interval: 15s
