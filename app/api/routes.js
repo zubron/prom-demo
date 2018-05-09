@@ -42,7 +42,11 @@ const getTodos = (res) => {
             return;
         }
 
-        res.json(todos);
+        if (todos.length > 3) {
+            res.status(500).send();
+        } else {
+            res.json(todos);
+        }
     });
 };
 
